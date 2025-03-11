@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:open_track/employee_screens/employee_drawer.dart';
 import '../models/attendance_record.dart';
 import 'attendance_form.dart';
 
@@ -16,6 +17,7 @@ class AttendanceListEmployee extends StatefulWidget {
 class _AttendanceListEmployeeState extends State<AttendanceListEmployee> {
   final _auth = FirebaseAuth.instance;
   final _firestore = FirebaseFirestore.instance;
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   List<Map<String, dynamic>> _attendanceRecords = [];
   bool _isLoading = false;
@@ -29,9 +31,9 @@ class _AttendanceListEmployeeState extends State<AttendanceListEmployee> {
 
   Future<void> _loadAttendanceRecords() async {
     if (!mounted) return;
-    
+
     setState(() {
-      _isLoading = true;
+      _isLoading = false;
       _error = '';
     });
 
@@ -42,40 +44,29 @@ class _AttendanceListEmployeeState extends State<AttendanceListEmployee> {
       }
 
       print('Loading records for user: ${user.uid}');
-      
-      // First ensure the user document exists
-      final userRef = _firestore.collection('users').doc(user.uid);
-      
-      // Create/update user document
-      await userRef.set({
-        'lastAccess': FieldValue.serverTimestamp(),
-        'email': user.email,
-        'isAnonymous': user.isAnonymous,
-        'providers': user.providerData.map((e) => e.providerId).toList(),
-      }, SetOptions(merge: true));
-      
-      final attendanceRef = _firestore
-          .collection('users')
-          .doc(user.uid)
-          .collection('attendance');
-          
-      final snapshot = await attendanceRef
-          .orderBy('date', descending: true)
-          .get();
 
-      if (!mounted) return;
+      // Fetch the user document
+      final userRef = _firestore.collection('users').doc(user.uid);
+      final userDoc = await userRef.get();
+
+      if (!userDoc.exists) {
+        throw Exception('User not found');
+      }
 
       final List<Map<String, dynamic>> records = [];
-      for (var doc in snapshot.docs) {
-        final data = doc.data();
-        records.add({
-          'employeeName': data['employeeName'] ?? 'Unknown',
-          'date': data['date'],
-          'type': data['type'] ?? 'attendance',
-          'inTime': data['inTime'],
-          'outTime': data['outTime'],
-          'note': data['note'],
-        });
+      final attendanceData = userDoc.data()?['attendanceRecords'] as List<dynamic>?;
+
+      if (attendanceData != null) {
+        for (var record in attendanceData) {
+          records.add({
+            'name': record['name'] ?? 'Unknown',
+            'date': record['date'],
+            'type': record['type'] ?? 'attendance',
+            'inTime': record['inTime'],
+            'outTime': record['outTime'],
+            'note': record['note'],
+          });
+        }
       }
 
       if (!mounted) return;
@@ -123,118 +114,108 @@ class _AttendanceListEmployeeState extends State<AttendanceListEmployee> {
     }
 
     return Scaffold(
+      key: _scaffoldKey,
       appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.menu, color: Colors.black),
-          onPressed: () {
-
-          },
-        ),
+        backgroundColor: Colors.cyan,
         title: const Text('Daily Attendance'),
         actions: [
-
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: _loadAttendanceRecords,
           ),
         ],
       ),
+      drawer: EmployeeDrawer(),
       body: _attendanceRecords.isEmpty
           ? const Center(child: Text('No attendance records found'))
           : ListView.builder(
-              itemCount: _attendanceRecords.length,
-              itemBuilder: (context, index) {
-                final record = _attendanceRecords[index];
-                final date = (record['date'] as Timestamp).toDate();
-                
-                return Card(
-                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              record['employeeName'],
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            Text(
-                              DateFormat('MMM dd, yyyy').format(date),
-                              style: const TextStyle(
-                                color: Colors.grey,
-                                fontSize: 14,
-                              ),
-                            ),
-                          ],
+        itemCount: _attendanceRecords.length,
+        itemBuilder: (context, index) {
+          final record = _attendanceRecords[index];
+          final date = DateFormat('dd-MM-yyyy').parse(record['date']);
+
+
+          return Card(
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        DateFormat('MMM dd, yyyy').format(date),
+                        style: const TextStyle(
+                          color: Colors.black,
+                          fontSize: 20,
                         ),
-                        const SizedBox(height: 8),
-                        if (record['type'] == 'leave')
-                          Text(
-                            'Leave Status: ${record['note'] ?? 'Pending'}',
-                            style: const TextStyle(
-                              fontSize: 15,
-                              color: Colors.blue,
-                            ),
-                          )
-                        else
-                          Row(
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  if (record['type'] == 'leave')
+                    Text(
+                      'Leave : ${record['note'] ?? 'Pending'}',
+                      style: const TextStyle(
+                        fontSize: 15,
+                        color: Colors.red,
+                      ),
+                    )
+                  else
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'In Time',
-                                      style: TextStyle(
-                                        color: Colors.grey[600],
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      record['inTime'] != null
-                                          ? DateFormat('hh:mm a').format((record['inTime'] as Timestamp).toDate())
-                                          : '--:--',
-                                      style: const TextStyle(fontSize: 15),
-                                    ),
-                                  ],
+                              Text(
+                                'In Time',
+                                style: TextStyle(
+                                  color: Colors.grey[600],
+                                  fontSize: 12,
                                 ),
                               ),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Out Time',
-                                      style: TextStyle(
-                                        color: Colors.grey[600],
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      record['outTime'] != null
-                                          ? DateFormat('hh:mm a').format((record['outTime'] as Timestamp).toDate())
-                                          : '--:--',
-                                      style: const TextStyle(fontSize: 15),
-                                    ),
-                                  ],
-                                ),
+                              const SizedBox(height: 4),
+                              Text(
+                                record['inTime'] != null
+                                    ? DateFormat('hh:mm a').format((record['inTime'] as Timestamp).toDate())
+                                    : '--:--',
+                                style: const TextStyle(fontSize: 15),
                               ),
                             ],
                           ),
+                        ),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Out Time',
+                                style: TextStyle(
+                                  color: Colors.grey[600],
+                                  fontSize: 12,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                record['outTime'] != null
+                                    ? DateFormat('hh:mm a').format((record['outTime'] as Timestamp).toDate())
+                                    : '--:--',
+                                style: const TextStyle(fontSize: 15),
+                              ),
+                            ],
+                          ),
+                        ),
                       ],
                     ),
-                  ),
-                );
-              },
+                ],
+              ),
             ),
+          );
+        },
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
           final result = await Navigator.push(

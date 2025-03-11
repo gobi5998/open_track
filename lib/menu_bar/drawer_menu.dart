@@ -82,7 +82,7 @@ class CustomDrawer extends StatelessWidget {
               Navigator.pop(context); // Close drawer
              Navigator.push(
              context,
-             MaterialPageRoute(builder: (context) =>  TimeSheetScreen()),
+             MaterialPageRoute(builder: (context) =>  TimeSheetScreen(userId: 'userId',)),
               );
             },
           ),

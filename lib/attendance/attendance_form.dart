@@ -15,7 +15,7 @@ class _AttendanceFormState extends State<AttendanceForm> {
   final _auth = FirebaseAuth.instance;
   final _firestore = FirebaseFirestore.instance;
   final _authService = AuthService();
-  
+
   DateTime _selectedDate = DateTime.now();
   TimeOfDay _inTime = TimeOfDay.now();
   TimeOfDay _outTime = TimeOfDay.now();
@@ -77,54 +77,76 @@ class _AttendanceFormState extends State<AttendanceForm> {
         throw Exception('User not authenticated');
       }
 
-      final dateKey = DateFormat('yyyy-MM-dd').format(_selectedDate);
-      
-      final docRef = _firestore
-          .collection('users')
-          .doc(user.uid)
-          .collection('attendance')
-          .doc(dateKey);
-          
-      Map<String, dynamic> updateData = {
-        'employeeName': user.displayName ?? user.email ?? 'Unknown',
-        'userId': user.uid,
-        'date': Timestamp.fromDate(_selectedDate),
-        'lastUpdated': FieldValue.serverTimestamp(),
-      };
-      
-      if (_selectedType == 'IN') {
-        updateData.addAll({
-          'inTime': Timestamp.fromDate(DateTime(
-            _selectedDate.year,
-            _selectedDate.month,
-            _selectedDate.day,
-            _inTime.hour,
-            _inTime.minute,
-          )),
-          'type': 'attendance',
-          'note': _noteController.text.trim(),
-        });
-      } else if (_selectedType == 'OUT') {
-        updateData.addAll({
-          'outTime': Timestamp.fromDate(DateTime(
-            _selectedDate.year,
-            _selectedDate.month,
-            _selectedDate.day,
-            _outTime.hour,
-            _outTime.minute,
-          )),
-          'type': 'attendance',
-          'note': _noteController.text.trim(),
-        });
-      } else if (_selectedType == 'LEAVE') {
-        updateData.addAll({
-          'type': 'leave',
-          'note': _noteController.text.trim(),
-        });
+      final userDocRef = _firestore.collection('users').doc(user.uid);
+      final userDoc = await userDocRef.get();
+
+      if (!userDoc.exists) {
+        throw Exception('User document not found');
       }
 
-      print('Saving attendance record: $updateData'); // Debug log
-      await docRef.set(updateData, SetOptions(merge: true));
+      final dateKey = DateFormat('dd-MM-yyyy').format(_selectedDate);
+      List<dynamic> attendanceRecords = userDoc.data()?['attendanceRecords'] ?? [];
+
+      // Check if a record for today's date already exists
+      Map<String, dynamic>? existingRecord;
+      int existingIndex = -1;
+
+      for (int i = 0; i < attendanceRecords.length; i++) {
+        if (attendanceRecords[i]['date'] == dateKey) {
+          existingRecord = attendanceRecords[i] as Map<String, dynamic>;
+          existingIndex = i;
+          break;
+        }
+      }
+
+      if (existingRecord == null) {
+        // If no existing record, create a new one
+        existingRecord = {
+          'date': dateKey,
+          'name': user.displayName ??  'Unknown',
+          'userId': user.uid,
+          'inTime': null,
+          'outTime': null,
+          'type': 'attendance',
+          'note': _noteController.text.trim(),
+        };
+      }
+
+      if (_selectedType == 'IN') {
+        existingRecord['inTime'] = Timestamp.fromDate(DateTime(
+          _selectedDate.year,
+          _selectedDate.month,
+          _selectedDate.day,
+          _inTime.hour,
+          _inTime.minute,
+        ));
+      } else if (_selectedType == 'OUT') {
+        existingRecord['outTime'] = Timestamp.fromDate(DateTime(
+          _selectedDate.year,
+          _selectedDate.month,
+          _selectedDate.day,
+          _outTime.hour,
+          _outTime.minute,
+        ));
+      } else if (_selectedType == 'LEAVE') {
+        existingRecord['type'] = 'leave';
+        existingRecord['note'] = _noteController.text.trim();
+      }
+
+      // Replace or append the record in the array
+      if (existingIndex != -1) {
+        attendanceRecords[existingIndex] = existingRecord; // Update existing record
+      } else {
+        attendanceRecords.add(existingRecord); // Add new record
+      }
+
+      print('Saving attendance record: $existingRecord'); // Debug log
+
+      // Update Firestore
+      await userDocRef.update({
+        'attendanceRecords': attendanceRecords,
+        'lastUpdated': FieldValue.serverTimestamp(),
+      });
 
       if (mounted) {
         Navigator.pop(context, true);
@@ -143,6 +165,13 @@ class _AttendanceFormState extends State<AttendanceForm> {
     }
   }
 
+
+
+
+
+
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -156,7 +185,7 @@ class _AttendanceFormState extends State<AttendanceForm> {
               style: TextStyle(
                 color: _isLoading ? Colors.grey : Colors.blue,
                 fontSize: 16,
-              ),    
+              ),
             ),
           ),
         ],
@@ -217,7 +246,7 @@ class _AttendanceFormState extends State<AttendanceForm> {
                   ),
                 ),
 
-              // Time display for OUT type  
+              // Time display for OUT type
               if (_selectedType == 'OUT')
                 ListTile(
                   title: const Text('Out Time'),
@@ -250,7 +279,7 @@ class _AttendanceFormState extends State<AttendanceForm> {
                   maxLines: 3,
                 ),
               if (_selectedType != 'LEAVE')
-                TextField(   
+                TextField(
                   controller: _noteController,
                   decoration: const InputDecoration(
                     labelText: 'Note',

@@ -58,7 +58,7 @@ class _EmployeeScreenState extends State<EmployeeScreen> {
 
   Future<void> _loadEmployees() async {
     if (!mounted) return;
-    
+
     setState(() => _isLoading = true);
     try {
       final QuerySnapshot snapshot = await _firestore
@@ -83,7 +83,7 @@ class _EmployeeScreenState extends State<EmployeeScreen> {
             'photoURL': employeeData['photoURL'] ?? '',
           };
         }).toList();
-        
+
         // Sort the list in memory instead
         _employees.sort((a, b) => b['name'].compareTo(a['name']));
         _isLoading = false;
@@ -231,12 +231,12 @@ class EmployeeListTile extends StatelessWidget {
         final updated = await Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => EditEmployeeDetails(
-              employeeData: employeeData,
+            builder: (context) => EditEmployeeDetails(userId: employeeData['id'],
+
             ),
           ),
         );
-        
+
         if (updated == true) {
           if (context.mounted) {
             final state = context.findAncestorStateOfType<_EmployeeScreenState>();
@@ -412,3 +412,4 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
     );
   }
 }
+
