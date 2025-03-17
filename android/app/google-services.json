@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "620685554842",
+    "project_id": "open-track-8d67b",
+    "storage_bucket": "open-track-8d67b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:620685554842:android:366e71cb99e5ad44149b23",
+        "android_client_info": {
+          "package_name": "com.example.open_track"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "620685554842-ik7q27dv7mekju0ksnmbgreejqae849s.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD4kHTD7920AF0gyqyjE8NVH-i39lzAv34"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "620685554842-ik7q27dv7mekju0ksnmbgreejqae849s.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
