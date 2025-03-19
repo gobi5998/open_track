@@ -415,7 +415,7 @@ class _AttendanceFormState extends State<AttendanceForm> {
         'attendanceRecords': attendanceRecords,
         'lastUpdated': FieldValue.serverTimestamp(),
       });
-      await PushNotificationService.notifyAdminOnLeaveRequest(user.displayName ?? "An Employee");
+
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
       print('Error saving attendance: $e');

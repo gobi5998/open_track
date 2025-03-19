@@ -134,7 +134,7 @@ class _EmployeeScreenState extends State<EmployeeScreen> {
                 ),
               );
               // Refresh the list when returning from PersonalDetailsScreen
-              refreshEmployeeList();
+               ();
             },
           ),
         ],

@@ -4,6 +4,7 @@ import 'package:open_track/menu_bar/leave_page.dart';
 import 'package:open_track/menu_bar/settings_page.dart';
 import 'package:open_track/menu_bar/timesheet_screen.dart';
 import '../loginpage.dart';
+import 'employee_leave.dart';
 
 class EmployeeDrawer extends StatelessWidget {
   const EmployeeDrawer({super.key});
@@ -36,7 +37,7 @@ class EmployeeDrawer extends StatelessWidget {
             leading: const Icon(Icons.event_note),
             title: const Text('My Leave'),
             onTap: () {
-              Navigator.push(context, MaterialPageRoute(builder: (context) => LeavePage()));
+              Navigator.push(context, MaterialPageRoute(builder: (context) => LeaveTrackerScreen()));
             },
           ),
           ListTile(

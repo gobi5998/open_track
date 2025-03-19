@@ -706,9 +706,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
-
-import '../attendance/attendance_list.dart';
-import '../home_screen.dart';
+import '../loginpage.dart';
 import 'employeescreen.dart';
 
 class PersonalDetailsScreen extends StatefulWidget {
@@ -735,12 +733,27 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
 
   final List<String> _roles = ['admin', 'employee'];
   final List<String> _domains = [
-    'Software Developer', 'Frontend Developer', 'Backend Developer', 'Full-Stack Developer',
-    'Mobile App Developer', 'DevOps Engineer', 'Software Architect', 'QA Engineer (Tester)',
+    'Software Developer',
+    'Frontend Developer',
+    'Backend Developer',
+    'Full-Stack Developer',
+    'Mobile App Developer',
+    'DevOps Engineer',
+    'Software Architect',
+    'QA Engineer (Tester)',
   ];
   final List<String> _departments = [
-    'React Developer', 'Angular Developer', 'UI/UX Developer', 'Nodejs Developer', 'Python Developer',
-    'Java Developer', 'PHP Developer', 'Golang Developer', 'C#/.NET Developer', 'MERN Developer', 'Flutter Developer',
+    'React Developer',
+    'Angular Developer',
+    'UI/UX Developer',
+    'Nodejs Developer',
+    'Python Developer',
+    'Java Developer',
+    'PHP Developer',
+    'Golang Developer',
+    'C#/.NET Developer',
+    'MERN Developer',
+    'Flutter Developer',
   ];
 
   File? _imageFile;
@@ -769,8 +782,11 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
 
     try {
       setState(() => _isUploadingImage = true);
-      final String fileName = 'employee_${DateTime.now().millisecondsSinceEpoch}.jpg';
-      final Reference storageRef = FirebaseStorage.instance.ref().child('employee_photos').child(fileName);
+      final String fileName = 'employee_${DateTime
+          .now()
+          .millisecondsSinceEpoch}.jpg';
+      final Reference storageRef = FirebaseStorage.instance.ref().child(
+          'employee_photos').child(fileName);
 
       await storageRef.putFile(_imageFile!);
       return await storageRef.getDownloadURL();
@@ -786,7 +802,8 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
       try {
-        final UserCredential userCred = await _auth.createUserWithEmailAndPassword(
+        final UserCredential userCred = await _auth
+            .createUserWithEmailAndPassword(
           email: _emailController.text.trim(),
           password: _passwordController.text.trim(),
         );
@@ -810,9 +827,11 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
 
         if (mounted) {
           if (_selectedRole == 'admin') {
-            Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const EmployeeScreen()));
+            Navigator.push(context,
+                MaterialPageRoute(builder: (context) => const Login()));
           } else if (_selectedRole == 'employee') {
-            Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const EmployeeScreen()));
+            Navigator.push(context,
+                MaterialPageRoute(builder: (context) => const Login()));
           }
           _showSnackbar('Employee added successfully', Colors.green);
         }
@@ -826,6 +845,32 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
     }
   }
 
+  //       if (mounted) {
+  //         ScaffoldMessenger.of(context).showSnackBar(
+  //           const SnackBar(
+  //             content: Text('Employee added successfully'),
+  //             backgroundColor: Colors.green,
+  //           ),
+  //         );
+  //         Navigator.pop(context);
+  //       }
+  //     } catch (e) {
+  //       if (mounted) {
+  //         ScaffoldMessenger.of(context).showSnackBar(
+  //           SnackBar(
+  //             content: Text('Error adding employee: ${e.toString()}'),
+  //             backgroundColor: Colors.red,
+  //           ),
+  //         );
+  //       }
+  //     } finally {
+  //       if (mounted) {
+  //         setState(() => _isLoading = false);
+  //       }
+  //     }
+  //   }
+  // }
+
   String _getFirebaseErrorMessage(FirebaseAuthException e) {
     switch (e.code) {
       case 'email-already-in-use':
@@ -838,7 +883,8 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
   }
 
   void _showSnackbar(String message, [Color color = Colors.red]) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message), backgroundColor: color));
+    ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message), backgroundColor: color));
   }
 
   @override
@@ -850,7 +896,8 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text('Add Employee', style: TextStyle(fontFamily: 'Poppins', color: Colors.white)),
+        title: const Text('Add Employee',
+            style: TextStyle(fontFamily: 'Poppins', color: Colors.white)),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -860,12 +907,18 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
             children: [
               _buildProfileImagePicker(),
               _buildTextField(_nameController, 'Full Name'),
-              _buildTextField(_emailController, 'Email', keyboardType: TextInputType.emailAddress),
-              _buildTextField(_phoneController, 'Phone Number', keyboardType: TextInputType.phone, phoneValidation: true),
+              _buildTextField(_emailController, 'Email',
+                  keyboardType: TextInputType.emailAddress),
+              _buildTextField(_phoneController, 'Phone Number',
+                  keyboardType: TextInputType.phone, phoneValidation: true),
               _buildPasswordField(),
-              _buildDropdown('Role', _roles, _selectedRole, (value) => setState(() => _selectedRole = value)),
-              _buildDropdown('Domain', _domains, _selectedDomain, (value) => setState(() => _selectedDomain = value)),
-              _buildDropdown('Department', _departments, _selectedDepartment, (value) => setState(() => _selectedDepartment = value)),
+              _buildDropdown('Role', _roles, _selectedRole, (value) =>
+                  setState(() => _selectedRole = value)),
+              _buildDropdown('Domain', _domains, _selectedDomain, (value) =>
+                  setState(() => _selectedDomain = value)),
+              _buildDropdown(
+                  'Department', _departments, _selectedDepartment, (value) =>
+                  setState(() => _selectedDepartment = value)),
               const SizedBox(height: 24),
               _buildSubmitButton(),
             ],
@@ -881,22 +934,29 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
         onTap: _pickImage,
         child: CircleAvatar(
           radius: 50,
-          backgroundImage: _imageFile != null ? FileImage(_imageFile!) : const AssetImage('assets/images/main_profile.png'),
+          backgroundImage: _imageFile != null
+              ? FileImage(_imageFile!)
+              : const AssetImage('assets/images/main_profile.png'),
         ),
       ),
     );
   }
 
-  Widget _buildTextField(TextEditingController controller, String label, {TextInputType keyboardType = TextInputType.text, bool phoneValidation = false}) {
+  Widget _buildTextField(TextEditingController controller, String label,
+      {TextInputType keyboardType = TextInputType
+          .text, bool phoneValidation = false}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: TextFormField(
         controller: controller,
         keyboardType: keyboardType,
-        decoration: InputDecoration(labelText: label, border: OutlineInputBorder()),
+        decoration: InputDecoration(
+            labelText: label, border: OutlineInputBorder()),
         validator: (value) {
           if (value == null || value.isEmpty) return 'Please enter $label';
-          if (phoneValidation && (value.length < 10 || !RegExp(r'^\d+$').hasMatch(value))) return 'Enter a valid phone number';
+          if (phoneValidation &&
+              (value.length < 10 || !RegExp(r'^\d+$').hasMatch(value)))
+            return 'Enter a valid phone number';
           return null;
         },
       ),
@@ -904,17 +964,21 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
   }
 
   Widget _buildPasswordField() {
-    return _buildTextField(_passwordController, 'Password', keyboardType: TextInputType.visiblePassword);
+    return _buildTextField(_passwordController, 'Password',
+        keyboardType: TextInputType.visiblePassword);
   }
 
-  Widget _buildDropdown(String label, List<String> items, String? selectedItem, ValueChanged<String?> onChanged) {
+  Widget _buildDropdown(String label, List<String> items, String? selectedItem,
+      ValueChanged<String?> onChanged) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: DropdownButtonFormField<String>(
-        decoration: InputDecoration(labelText: label, border: OutlineInputBorder()),
+        decoration: InputDecoration(
+            labelText: label, border: OutlineInputBorder()),
         value: selectedItem,
         onChanged: onChanged,
-        items: items.map((String value) => DropdownMenuItem(value: value, child: Text(value))).toList(),
+        items: items.map((String value) =>
+            DropdownMenuItem(value: value, child: Text(value))).toList(),
       ),
     );
   }
@@ -923,7 +987,9 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
     return ElevatedButton(
       onPressed: _isLoading ? null : _handleAddEmployee,
       style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
-      child: _isLoading ? const CircularProgressIndicator(color: Colors.white) : const Text('Add Employee', style: TextStyle(color: Colors.white)),
+      child: _isLoading
+          ? const CircularProgressIndicator(color: Colors.white)
+          : const Text('Add Employee', style: TextStyle(color: Colors.white)),
     );
   }
 }

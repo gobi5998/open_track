@@ -375,8 +375,6 @@
 //   }
 // }
 
-
-
 import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -442,7 +440,9 @@ class _SignupState extends State<Signup> {
                       const SizedBox(height: 20),
                       _buildPasswordField("Password", _passwordController),
                       const SizedBox(height: 20),
-                      _buildPasswordField("Confirm Password", _confirmPasswordController, confirmPassword: true),
+                      _buildPasswordField(
+                          "Confirm Password", _confirmPasswordController,
+                          confirmPassword: true),
                       const SizedBox(height: 30),
                       _buildSignUpButton(),
                       const SizedBox(height: 24),
@@ -459,25 +459,34 @@ class _SignupState extends State<Signup> {
   }
 
   /// ✅ Generic Text Field Widget
-  Widget _buildTextField(String label, TextEditingController controller, {bool isEmail = false}) {
+  Widget _buildTextField(String label, TextEditingController controller,
+      {bool isEmail = false}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
-          style: const TextStyle(fontFamily: 'Poppins', fontSize: 16, fontWeight: FontWeight.w500),
+          style: const TextStyle(
+              fontFamily: 'Poppins', fontSize: 16, fontWeight: FontWeight.w500),
         ),
         const SizedBox(height: 8),
         TextFormField(
           controller: controller,
-          keyboardType: isEmail ? TextInputType.emailAddress : TextInputType.text,
+          keyboardType:
+              isEmail ? TextInputType.emailAddress : TextInputType.text,
           decoration: InputDecoration(
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Colors.blue)),
-            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Colors.blue)),
+            border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Colors.blue)),
+            enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Colors.blue)),
           ),
           validator: (value) {
-            if (value == null || value.isEmpty) return 'Please enter your $label';
-            if (isEmail && !RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) return 'Please enter a valid email';
+            if (value == null || value.isEmpty)
+              return 'Please enter your $label';
+            if (isEmail && !RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value))
+              return 'Please enter a valid email';
             return null;
           },
         ),
@@ -490,52 +499,77 @@ class _SignupState extends State<Signup> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text("Role", style: TextStyle(fontFamily: 'Poppins', fontSize: 16, fontWeight: FontWeight.w500)),
+        const Text("Role",
+            style: TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: 16,
+                fontWeight: FontWeight.w500)),
         const SizedBox(height: 8),
         DropdownButtonFormField<String>(
           value: _selectedRole,
           decoration: InputDecoration(
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Colors.blue)),
-            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Colors.blue)),
-            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Colors.blue)),
+            border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Colors.blue)),
+            enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Colors.blue)),
+            focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Colors.blue)),
           ),
           items: [
             DropdownMenuItem(
               value: AuthService.ROLE_ADMIN,
-              child: Text(AuthService.ROLE_ADMIN.toUpperCase(), style: const TextStyle(fontFamily: 'Poppins', fontSize: 14)),
+              child: Text(AuthService.ROLE_ADMIN.toUpperCase(),
+                  style: const TextStyle(fontFamily: 'Poppins', fontSize: 14)),
             ),
           ],
           onChanged: (String? value) {
             if (value != null) setState(() => _selectedRole = value);
           },
-          validator: (value) => value == null || value.isEmpty ? 'Please select a role' : null,
+          validator: (value) =>
+              value == null || value.isEmpty ? 'Please select a role' : null,
         ),
       ],
     );
   }
 
   /// ✅ Password Field with Visibility Toggle
-  Widget _buildPasswordField(String label, TextEditingController controller, {bool confirmPassword = false}) {
+  Widget _buildPasswordField(String label, TextEditingController controller,
+      {bool confirmPassword = false}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontFamily: 'Poppins', fontSize: 16, fontWeight: FontWeight.w500)),
+        Text(label,
+            style: const TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: 16,
+                fontWeight: FontWeight.w500)),
         const SizedBox(height: 8),
         TextFormField(
           controller: controller,
           obscureText: _isObscured,
           decoration: InputDecoration(
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Colors.blue)),
-            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Colors.blue)),
+            border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Colors.blue)),
+            enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Colors.blue)),
             suffixIcon: IconButton(
-              icon: Icon(_isObscured ? Icons.visibility_off : Icons.visibility, color: Colors.blue),
+              icon: Icon(_isObscured ? Icons.visibility_off : Icons.visibility,
+                  color: Colors.blue),
               onPressed: () => setState(() => _isObscured = !_isObscured),
             ),
           ),
           validator: (value) {
-            if (value == null || value.isEmpty) return 'Please enter your password';
-            if (value.length < 6) return 'Password must be at least 6 characters';
-            if (confirmPassword && value != _passwordController.text) return 'Passwords do not match';
+            if (value == null || value.isEmpty)
+              return 'Please enter your password';
+            if (value.length < 6)
+              return 'Password must be at least 6 characters';
+            if (confirmPassword && value != _passwordController.text)
+              return 'Passwords do not match';
             return null;
           },
         ),
@@ -552,9 +586,16 @@ class _SignupState extends State<Signup> {
         onPressed: _isLoading ? null : _handleSignUp,
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.blue,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
-        child: _isLoading ? const CircularProgressIndicator(color: Colors.white) : const Text("Sign Up", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+        child: _isLoading
+            ? const CircularProgressIndicator(color: Colors.white)
+            : const Text("Sign Up",
+                style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold)),
       ),
     );
   }
@@ -566,8 +607,11 @@ class _SignupState extends State<Signup> {
       children: [
         const Text("Already have an account?"),
         TextButton(
-          onPressed: () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const Login())),
-          child: const Text("Log In", style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold)),
+          onPressed: () => Navigator.pushReplacement(
+              context, MaterialPageRoute(builder: (context) => const Login())),
+          child: const Text("Log In",
+              style:
+                  TextStyle(color: Colors.blue, fontWeight: FontWeight.bold)),
         ),
       ],
     );
@@ -578,9 +622,16 @@ class _SignupState extends State<Signup> {
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
       try {
-        final userCred = await _auth.registerUser(_emailController.text.trim(), _passwordController.text.trim(), name: _nameController.text.trim(), role: _selectedRole);
+        final userCred = await _auth.registerUser(
+            _emailController.text.trim(), _passwordController.text.trim(),
+            name: _nameController.text.trim(), role: _selectedRole);
         if (userCred.user != null) {
-          Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => _selectedRole == AuthService.ROLE_ADMIN ? const AttendanceList() : const AttendanceListEmployee()));
+          Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                  builder: (context) => _selectedRole == AuthService.ROLE_ADMIN
+                      ? const AttendanceList()
+                      : const AttendanceListEmployee()));
         }
       } catch (e) {
         _showSnackbar('Registration failed: ${e.toString()}');
@@ -591,7 +642,8 @@ class _SignupState extends State<Signup> {
   }
 
   void _showSnackbar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override

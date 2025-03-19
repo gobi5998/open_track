@@ -234,7 +234,7 @@ class _LeavePageState extends State<LeavePage> {
       }
 
       await userDocRef.update({'attendanceRecords': attendanceRecords});
-      await PushNotificationService.notifyEmployeeOnLeaveStatus(userId, newStatus);
+      // await PushNotificationService.notifyEmployeeOnLeaveStatus(userId, newStatus);
     }
   }
 

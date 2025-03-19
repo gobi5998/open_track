@@ -143,9 +143,9 @@ class _LoginState extends State<Login> {
                           ),
                           child: _isLoading
                               ? Lottie.asset(
-                            'assets/animation/ani11.json', // ✅ Lottie Animation
-                            height: 40,
-                            width: 40,
+                            'assets/animation/ani11.json',
+                            height: 50,
+                            width: double.infinity,
                           )
                               : const Text(
                                   'Log In',
