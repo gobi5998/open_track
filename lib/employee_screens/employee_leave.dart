@@ -1,147 +1,284 @@
-import 'package:flutter/material.dart';
+//
+// import 'package:cloud_firestore/cloud_firestore.dart';
+// import 'package:firebase_auth/firebase_auth.dart';
+// import 'package:flutter/material.dart';
+//
+// class LeaveListScreen extends StatefulWidget {
+//   @override
+//   _LeaveListScreenState createState() => _LeaveListScreenState();
+// }
+//
+// class _LeaveListScreenState extends State<LeaveListScreen> {
+//   Stream<Map<int, int>> getMonthlyLeaveDaysStream() {
+//     final String? currentUserId = FirebaseAuth.instance.currentUser?.uid;
+//
+//     if (currentUserId == null) {
+//       return Stream.value({});
+//     }
+//
+//     return FirebaseFirestore.instance
+//         .collection('users')
+//         .doc(currentUserId)
+//         .snapshots()
+//         .map((doc) {
+//       if (!doc.exists) return {};
+//
+//       final data = doc.data()!;
+//       Map<int, int> leaveDaysPerMonth = {
+//         for (int i = 1; i <= 12; i++) i: 0
+//       }; // Initialize all months with 0
+//
+//       if (data.containsKey('attendanceRecords') &&
+//           data['attendanceRecords'] is List) {
+//         for (var record in data['attendanceRecords']) {
+//           if (record['type'] == 'leave' && record['dd-MM-yyyy'] != null) {
+//             try {
+//               DateTime leaveDate;
+//
+//               // ✅ Fix: Handle both Timestamp and String formats
+//               if (record['dd-MM-yyyy'] is Timestamp) {
+//                 leaveDate = (record['dd-MM-yyyy'] as Timestamp).toDate();
+//               } else if (record['dd-MM-yyyy'] is String) {
+//                 leaveDate = DateTime.parse(record['dd-MM-yyyy']); // Format: yyyy-MM-dd
+//               } else {
+//                 continue; // Skip invalid records
+//               }
+//
+//               int month = leaveDate.month;
+//               leaveDaysPerMonth[month] = (leaveDaysPerMonth[month] ?? 0) + 1;
+//               print(record);
+//             } catch (e) {
+//               print("❌ Error parsing leave date: $e");
+//             }
+//           }
+//         }
+//       }
+//       return leaveDaysPerMonth;
+//     });
+//   }
+//
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//         appBar: AppBar(
+//             title: const Text('Leave Days List'), backgroundColor: Colors.blue),
+//         body: StreamBuilder<Map<int, int>>(
+//             stream: getMonthlyLeaveDaysStream(),
+//             builder: (context, snapshot) {
+//               if (snapshot.connectionState == ConnectionState.waiting) {
+//                 return const Center(child: CircularProgressIndicator());
+//               }
+//               if (snapshot.hasError) {
+//                 return Center(child: Text("Error: ${snapshot.error}"));
+//               }
+//
+//               Map<int, int> leaveData = snapshot.data ?? {};
+//               List<String> months = [
+//                 'January',
+//                 'February',
+//                 'March',
+//                 'April',
+//                 'May',
+//                 'June',
+//                 'July',
+//                 'August',
+//                 'September',
+//                 'October',
+//                 'November',
+//                 'December'
+//               ];
+//
+//               return ListView.builder(
+//                 itemCount: 12,
+//                 itemBuilder: (context, index) {
+//                   int month = index + 1;
+//                   int leaveDays = leaveData[month] ?? 0;
+//
+//                   return ListTile(
+//                     leading: CircleAvatar(
+//                         backgroundImage:
+//                         const AssetImage('assets/images/main_profile.png')),
+//                     title: Text(months[index],
+//                         style: const TextStyle(
+//                             fontSize: 16, fontWeight: FontWeight.bold)),
+//                     subtitle: Text("Leave Days: $leaveDays"),
+//                   );
+//                 },
+//               );
+//             }));
+//   }
+// }
+
 import 'package:cloud_firestore/cloud_firestore.dart';
-class LeaveTrackerScreen extends StatefulWidget {
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart'; // Import for date formatting
+
+class LeaveListScreen extends StatefulWidget {
   @override
-  _LeaveTrackerScreenState createState() => _LeaveTrackerScreenState();
+  _LeaveListScreenState createState() => _LeaveListScreenState();
 }
 
-class _LeaveTrackerScreenState extends State<LeaveTrackerScreen> {
-  final String employeeId = "userId"; // Example Employee ID
-  int selectedYear = DateTime.now().year;
-  int selectedMonth = DateTime.now().month;
-  int monthlyLeaveCount = 0;
-  int yearlyLeaveCount = 0;
+class _LeaveListScreenState extends State<LeaveListScreen> {
+  final String? currentUserId = FirebaseAuth.instance.currentUser?.uid;
 
-  @override
-  void initState() {
-    super.initState();
-    _fetchLeaveCounts();
-  }
+  /// ✅ Fetches both **work hours & leave days** dynamically
+  Stream<Map<String, dynamic>> getEmployeeDataStream() {
+    final String? currentUserId = FirebaseAuth.instance.currentUser?.uid;
 
-  /// Fetch Monthly and Yearly Leave Count
-  void _fetchLeaveCounts() async {
-    int monthLeaves = await getMonthlyLeaveCount(employeeId, selectedYear, selectedMonth);
-    int yearLeaves = await getYearlyLeaveCount(employeeId, selectedYear);
+    if (currentUserId == null) {
+      return Stream.value({});
+    }
 
-    setState(() {
-      monthlyLeaveCount = monthLeaves;
-      yearlyLeaveCount = yearLeaves;
+    return FirebaseFirestore.instance
+        .collection('users')
+        .doc(currentUserId)
+        .snapshots()
+        .map((doc) {
+      if (!doc.exists) return {};
+
+      final data = doc.data()!;
+      Map<String, double> dailyWorkHours = {};
+      Map<String, double> dailyLeaveHours = {};
+      Map<int, int> leaveDaysPerMonth = {for (int i = 1; i <= 12; i++) i: 0};
+
+      if (data.containsKey('attendanceRecords') &&
+          data['attendanceRecords'] is List) {
+        for (var record in data['attendanceRecords']) {
+          double workHours = 0;
+          double leaveHours = (record['type'] == 'leave') ? 8.0 : 0.0;
+
+          // ✅ Safe parsing of date
+          String? dateStr = record['date'];
+          if (dateStr != null && dateStr.isNotEmpty) {
+            try {
+              DateTime leaveDate = DateFormat('dd-MM-yyyy').parse(dateStr);
+              int month = leaveDate.month;
+              leaveDaysPerMonth[month] = (leaveDaysPerMonth[month] ?? 0) + 1;
+            } catch (e) {
+              print("❌ Error parsing leave date: $e");
+            }
+          }
+
+          // ✅ Safe parsing of inTime and outTime
+          DateTime? inTime = (record['inTime'] != null)
+              ? (record['inTime'] as Timestamp).toDate()
+              : null;
+          DateTime? outTime = (record['outTime'] != null)
+              ? (record['outTime'] as Timestamp).toDate()
+              : null;
+
+          if (inTime != null && outTime != null && outTime.isAfter(inTime)) {
+            workHours = outTime.difference(inTime).inHours.toDouble();
+          }
+
+          String dateKey = dateStr ?? "Unknown";
+          dailyWorkHours[dateKey] = (dailyWorkHours[dateKey] ?? 0) + workHours;
+          dailyLeaveHours[dateKey] =
+              (dailyLeaveHours[dateKey] ?? 0) + leaveHours;
+        }
+      }
+
+      return {
+        'name': data['name'] ?? '',
+        'photoURL': data['photoURL'] ?? '',
+        'dailyWorkHours': dailyWorkHours,
+        'dailyLeaveHours': dailyLeaveHours,
+        'leaveDaysPerMonth': leaveDaysPerMonth,
+      };
     });
-  }
-
-  /// Get Leave Count for a Specific Month
-  Future<int> getMonthlyLeaveCount(String employeeId, int year, int month) async {
-    final firestore = FirebaseFirestore.instance;
-    DateTime startDate = DateTime(year, month, 1);
-    DateTime endDate = DateTime(year, month + 1, 0);
-
-    QuerySnapshot leaveSnapshot = await firestore
-         .collection('users')
-        .where('employeeId', isEqualTo: employeeId)
-        .where('status', isEqualTo: 'Accepted')
-        .get();
-
-    int totalDays = 0;
-
-    for (var doc in leaveSnapshot.docs) {
-      DateTime leaveStart = DateTime.parse(doc['startDate']);
-      DateTime leaveEnd = DateTime.parse(doc['endDate']);
-
-      // Adjust range to fit within the selected month
-      DateTime rangeStart = leaveStart.isBefore(startDate) ? startDate : leaveStart;
-      DateTime rangeEnd = leaveEnd.isAfter(endDate) ? endDate : leaveEnd;
-
-      totalDays += rangeEnd.difference(rangeStart).inDays + 1;
-    }
-
-    return totalDays;
-  }
-
-  /// Get Total Leaves Taken in a Year
-  Future<int> getYearlyLeaveCount(String employeeId, int year) async {
-    int totalLeaves = 0;
-    for (int month = 1; month <= 12; month++) {
-      int monthLeaves = await getMonthlyLeaveCount(employeeId, year, month);
-      totalLeaves += monthLeaves;
-    }
-    return totalLeaves;
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Employee Leave Tracker'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              "Leave Details for Employee: $employeeId",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 10),
+        appBar: AppBar(
+            title: const Text('Leave & Work Hours'),
+            backgroundColor: Colors.blue),
+        body: StreamBuilder<Map<String, dynamic>>(
+            stream: getEmployeeDataStream(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              if (snapshot.hasError) {
+                return Center(child: Text("Error: ${snapshot.error}"));
+              }
 
-            // Month Selection Dropdown
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                DropdownButton<int>(
-                  value: selectedMonth,
-                  onChanged: (newMonth) {
-                    setState(() {
-                      selectedMonth = newMonth!;
-                    });
-                    _fetchLeaveCounts();
-                  },
-                  items: List.generate(12, (index) {
-                    return DropdownMenuItem<int>(
-                      value: index + 1,
-                      child: Text("Month ${index + 1}"),
-                    );
-                  }),
-                ),
+              Map<String, dynamic> employeeData = snapshot.data ?? {};
+              Map<int, int> leaveData = employeeData['leaveDaysPerMonth'] ?? {};
+              Map<String, double> dailyWorkHours =
+                  employeeData['dailyWorkHours'] ?? {};
+              Map<String, double> dailyLeaveHours =
+                  employeeData['dailyLeaveHours'] ?? {};
+              String employeeName = employeeData['name'] ?? "Unknown";
 
-                // Year Selection Dropdown
-                DropdownButton<int>(
-                  value: selectedYear,
-                  onChanged: (newYear) {
-                    setState(() {
-                      selectedYear = newYear!;
-                    });
-                    _fetchLeaveCounts();
-                  },
-                  items: List.generate(5, (index) {
-                    int year = DateTime.now().year - index;
-                    return DropdownMenuItem<int>(
-                      value: year,
-                      child: Text("$year"),
-                    );
-                  }),
-                ),
-              ],
-            ),
+              List<String> months = [
+                'January',
+                'February',
+                'March',
+                'April',
+                'May',
+                'June',
+                'July',
+                'August',
+                'September',
+                'October',
+                'November',
+                'December'
+              ];
 
-            SizedBox(height: 20),
+              return Column(
+                children: [
+                  // ✅ Employee Name
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Text("Employee: $employeeName",
+                        style: const TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.bold)),
+                  ),
 
-            // Display Monthly Leave Count
-            Text(
-              "Total Leaves Taken in Selected Month: $monthlyLeaveCount days",
-              style: TextStyle(fontSize: 16),
-            ),
+                  // ✅ Leave Summary List
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: 12,
+                      itemBuilder: (context, index) {
+                        int month = index + 1;
+                        int leaveDays = leaveData[month] ?? 0;
 
-            SizedBox(height: 10),
+                        return ListTile(
+                          leading: const Icon(Icons.calendar_today,
+                              color: Colors.blue),
+                          title: Text(months[index],
+                              style: const TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.bold)),
+                          subtitle: Text("Leave Days: $leaveDays",
+                              style: TextStyle(
+                                  color: leaveDays > 0
+                                      ? Colors.red
+                                      : Colors.black)),
+                        );
+                      },
+                    ),
+                  ),
 
-            // Display Yearly Leave Count
-            Text(
-              "Total Leaves Taken in Selected Year: $yearlyLeaveCount days",
-              style: TextStyle(fontSize: 16),
-            ),
-          ],
-        ),
-      ),
-    );
+                  // ✅ Work Hours Summary
+                  // Expanded(
+                  //   child: ListView(
+                  //     children: dailyWorkHours.keys.map((date) {
+                  //       return ListTile(
+                  //         leading: const Icon(Icons.access_time, color: Colors.green),
+                  //         title: Text("Date: $date",
+                  //             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  //         subtitle: Text(
+                  //             "Work Hours: ${dailyWorkHours[date]?.toStringAsFixed(2)} hrs | Leave Hours: ${dailyLeaveHours[date]?.toStringAsFixed(2)} hrs",
+                  //             style: const TextStyle(color: Colors.black)),
+                  //       );
+                  //     }).toList(),
+                  //   ),
+                  // ),
+                ],
+              );
+            }));
   }
 }
